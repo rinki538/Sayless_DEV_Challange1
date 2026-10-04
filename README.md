@@ -1,176 +1,133 @@
 # SayLess
 
-**Find the words. Keep your voice.** A private writing helper that suggests ways to reply to a difficult message, powered by an open-weight AI running on your own computer.
+### Find the words. Keep your voice.
 
-*Built for the "Build for a Friend" hackathon.*
+SayLess is a private, local-first writing assistant for people who know what they want to say but need help putting it into words. It turns a difficult message into three short reply drafts, or helps you think through the message without drafting a reply.
 
-## Problem
+**Your conversations stay on your device when you use Ollama locally.**
 
-A friend of mine often gets messages that are awkward or hard to answer. They know what they feel, but they struggle to find the right words. Asking a cloud chatbot means pasting private conversations into someone else's servers, and the answers often sound like nobody they know.
+> Built for the [Hacktoberfest Weekend Challenge: Build for a Friend](https://dev.to/challenges/hacktoberfest-weekend-2026-10-01).
 
-## Solution
+## See it in action
 
-SayLess takes the message you received, what you want to communicate, and how you want it to sound. It then offers three possible replies:
+SayLess runs in your browser and connects directly to Ollama on your computer. There is no hosted demo because generation requires a running local Ollama model. Follow [Getting started](#getting-started) to try it.
 
-- **Soft**: gentle and empathetic
-- **Natural**: how you would really text it
-- **Direct**: clear and straightforward
+## Why SayLess?
 
-You choose what to send, or nothing at all. The AI is told never to pick a "right" answer, never to invent facts, and never to guess what the other person feels.
-
-## Why Open Source AI?
-
-- **Local inference.** The model runs on your machine through [Ollama](https://ollama.com). The app never talks to a hosted AI provider.
-- **Privacy.** Conversations are processed by your own Ollama instance instead of a cloud AI service.
-- **No paid AI API.** No API keys, no usage bills, no account.
-- **Swappable model.** Change one setting to try `llama3.2:3b`, `gemma3:4b`, `mistral` or any other model Ollama can run.
-- **Runs on your own hardware.** A small 4B model runs on an ordinary laptop.
-- **Easy experiments.** Open-weight models can be downloaded, compared and replaced freely, which makes tuning prompts for this use case fast.
+Awkward or sensitive messages can be hard to answer. Cloud chatbots may require sharing private conversations and can produce replies that do not sound like you. SayLess offers a local alternative: choose what you want to communicate, pick a tone, and get a few drafts to edit or ignore.
 
 ## Features
 
-- Paste a message, pick an intent (Apologize, Explain, Say No, Set a Boundary, Thank Them, Cheer Them Up, Ask for More Time, Make Things Right) and a tone
-- Three reply options with one-click **Copy**
-- **Regenerate** and **Start Over**
-- **Make it sound like me**: paste a few of your own texts and the replies follow your sentence length, casualness, punctuation, capitalization and emoji use
-- **Just help me think**: explains what the message is asking and what you could address, without writing a reply
-- Loading, empty and error states (Ollama not running, missing model, timeout, malformed or empty AI output)
-- One automatic retry with a stricter prompt, plus a fallback parser, when the model returns bad JSON
-- Light and dark mode, `Ctrl/⌘ + Enter` shortcut, responsive layout, keyboard and screen-reader friendly
+- Generate **Soft**, **Natural**, and **Direct** reply options for an incoming message.
+- Choose an intent such as apologizing, explaining, saying no, or setting a boundary.
+- Optionally provide a writing sample to guide sentence length, casualness, punctuation, capitalization, and emoji use.
+- Use **Just help me think** to understand what a message asks and consider possible response directions, without generating a reply.
+- Copy a reply, regenerate options, edit your choices, or start over.
+- Use light or dark mode and keyboard-friendly controls.
+- Handle missing models, connection problems, timeouts, and malformed model output with clear error states.
 
-## Tech Stack
+## How it works
 
-- React 19 and Vite
+```text
+Your browser -> Ollama on your computer -> Local model -> Validated result -> Reply cards
+```
+
+1. The React app collects the message, intent, tone, and optional writing sample.
+2. Prompt builders prepare the request and instruct the model to return structured JSON.
+3. `src/services/ollama.js` sends a request to Ollama's `/api/generate` endpoint.
+4. Response parsers validate and normalize the model output before the UI displays it as text.
+
+There is no application server, database, account, or hosted AI API. By default, the app sends requests to `http://localhost:11434`. If you configure Ollama at another address, the message is sent to that address instead.
+
+## Tech stack
+
+- React 19
+- Vite
 - Tailwind CSS 4
-- Ollama
-- A local open-weight model (default `qwen3:4b`)
+- [Ollama](https://ollama.com/) for local inference
+- Default model: `qwen3:4b` (you can configure another model supported by Ollama)
 
-No database, no authentication, no backend.
+## Getting started
 
-## Architecture
+### Requirements
 
-```
-React (browser)  ->  Ollama (localhost:11434)  ->  Local AI model  ->  JSON response  ->  3 reply cards
-```
+- Node.js `20.19+` or `22.12+`
+- [Ollama](https://ollama.com/download) installed and running
 
-1. The form collects the message, intent, tone and optional writing sample.
-2. `src/utils/prompts.js` builds the prompt.
-3. `src/services/ollama.js` is the only file that calls Ollama (`POST /api/generate`, `stream: false`, JSON schema in `format`).
-4. `src/utils/parseResponse.js` validates the answer (and repairs common problems).
-5. The result renders as plain text. AI output is never inserted as HTML.
+### Install and run
 
-## Setup (Windows)
+In PowerShell, from the project folder:
 
-You need [Node.js](https://nodejs.org) 20.19 or newer and [Ollama](https://ollama.com/download).
-
-1. **Install Ollama** from https://ollama.com/download (or in PowerShell: `winget install Ollama.Ollama`).
-2. **Download the model** (about 2.5 GB, once):
-
-   ```
-   ollama pull qwen3:4b
-   ```
-
-3. **Make sure Ollama is running.** After installing, Ollama normally starts by itself and sits in the system tray. If the app later says it can't connect, start it manually:
-
-   ```
-   ollama serve
-   ```
-
-   (If this says the address is already in use, Ollama is already running. That is fine.)
-
-4. **Install and start the app** from this folder:
-
-   ```
-   npm install
-   npm run dev
-   ```
-
-5. Open the address Vite prints, usually http://localhost:5173.
-
-### Change the model or address
-
-Copy the example settings file, edit it, and restart `npm run dev`:
-
-```
-copy .env.example .env
+```powershell
+ollama pull qwen3:4b
+npm install
+npm run dev
 ```
 
+Open the local URL printed by Vite, usually `http://localhost:5173`.
+
+Ollama normally runs in the background after installation. If it is not running, start it in a separate terminal:
+
+```powershell
+ollama serve
 ```
+
+The first response can take longer while Ollama loads the model into memory. Generation speed also depends on your computer and the selected model.
+
+## Configure Ollama
+
+The defaults are in `src/config.js`. To override them, copy the example environment file and edit it:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+```env
 VITE_OLLAMA_BASE_URL=http://localhost:11434
 VITE_OLLAMA_MODEL=qwen3:4b
 ```
 
-The defaults live in `src/config.js`. Remember to `ollama pull` any new model first.
+Restart the Vite development server after changing `.env`. Pull the selected model first with `ollama pull <model-name>`.
 
-### Troubleshooting
-
-- **"Couldn't connect to your local AI."** Ollama isn't running. Start it (step 3). Check with `ollama list`.
-- **"Your local AI doesn't have this model yet."** Run `ollama pull qwen3:4b` (or the model you configured).
-- **First answer is slow.** The model is loading into memory. Later answers are faster.
-- **Browser blocks the request (CORS).** Ollama allows `localhost` by default. If you open the app from another address, allow it with `setx OLLAMA_ORIGINS "http://your-address:5173"` and restart Ollama.
-
-## Project Structure
-
-```
-sayless/
-├── index.html
-├── vite.config.js
-├── package.json
-├── .env.example
-├── public/
-│   └── favicon.svg
-└── src/
-    ├── main.jsx
-    ├── App.jsx                  state and screen flow
-    ├── config.js                Ollama URL, model, timeout
-    ├── index.css                theme tokens, animations
-    ├── components/
-    │   ├── Header.jsx
-    │   ├── MessageInput.jsx
-    │   ├── IntentSelector.jsx
-    │   ├── ToneSelector.jsx
-    │   ├── StyleInput.jsx
-    │   ├── GenerateButton.jsx
-    │   ├── Button.jsx
-    │   ├── LoadingState.jsx
-    │   ├── ErrorMessage.jsx
-    │   ├── MessageBubble.jsx
-    │   ├── Results.jsx
-    │   ├── ReplyCard.jsx
-    │   ├── ThinkingMode.jsx
-    │   ├── ResultActions.jsx
-    │   └── PrivacyNote.jsx
-    ├── hooks/
-    │   └── useTheme.js
-    ├── services/
-    │   └── ollama.js            all Ollama calls live here
-    └── utils/
-        ├── options.js           intents and tones
-        ├── prompts.js           prompt builders
-        ├── parseResponse.js     JSON validation and fallback parsing
-        ├── errors.js            error text shown to the user
-        ├── clipboard.js
-        └── storage.js
-```
-
-## Demo
-
-Message received:
-
-> Why do you always reply so late?
-
-Choose **Explain**, tone **Natural**, then **Find My Words**. You get three options, for example (wording varies by model and run):
-
-- **Soft**: "Sorry for the slow replies. I don't mean to leave you hanging."
-- **Natural**: "yeah I'm bad at replying, sorry. I'll try to be quicker"
-- **Direct**: "I reply late because I don't always see messages right away."
-
-Choose **Just help me think** instead and you get a short breakdown (what they're asking, things you could address, directions you could take) that ends with "You decide what you want to say."
+If you use a non-local Ollama address, configure Ollama's CORS origins to allow the app's origin. Only use trusted Ollama servers for private conversations.
 
 ## Privacy
 
-- Messages are sent only to the Ollama address you configure (`http://localhost:11434` by default), so they are processed by your local Ollama instance rather than a cloud AI provider.
-- Conversations are held in memory while the page is open. They are never saved and never logged.
-- `localStorage` holds only your theme and, if you use "Make it sound like me", your writing sample. Clear the box to remove it.
-- Fonts are bundled with the app, and there is no analytics or tracking.
-- If you point `VITE_OLLAMA_BASE_URL` at another computer, your messages travel to that computer. Keep it on `localhost` for the privacy described above.
+- Messages and generated replies stay in the open browser tab; the app does not save conversation text.
+- The optional writing sample is saved in browser `localStorage` so it can be reused; clear it in the app to remove it.
+- The selected theme is also saved in `localStorage`.
+- The app does not include analytics or tracking.
+- With the default configuration, prompts are sent to Ollama at `localhost`. If you set a remote Ollama URL, your prompts go to that server.
+
+## Project structure
+
+```text
+src/
+├── App.jsx                 App state, validation, and screen flow
+├── config.js               Ollama URL, model, and timeout settings
+├── components/             Form controls, result views, and shared UI
+├── hooks/useTheme.js       Theme preference and document theme
+├── services/ollama.js      Ollama requests and generation error handling
+└── utils/
+    ├── prompts.js          Reply and thinking prompt builders
+    ├── parseResponse.js    Model output validation and parsing
+    ├── errors.js           User-facing error descriptions
+    └── storage.js          Safe localStorage helpers
+```
+
+## Build for production
+
+```powershell
+npm run build
+npm run preview
+```
+
+The production build is written to `dist/`. The browser app still needs to reach an Ollama server to generate responses.
+
+## Contributing
+
+Suggestions, bug reports, and pull requests are welcome. For a useful bug report, include the steps to reproduce it and whether you can reproduce it with the default Ollama model.
+
+## License
+
+SayLess is available under the [MIT License](./LICENSE).
